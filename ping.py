@@ -3,6 +3,8 @@ import sys
 import threading
 import time
 
+import requests
+
 
 def main():
     while True:
@@ -15,10 +17,15 @@ def ping():
     There is a cooldown period between attempts at restarting.
     """
 
+    if not canRestart():
+        print("Cooldown for attempting to restart not over yet!")
+        return
+
     global lastRestarted
-    if not os.system('ping %s -n 1' % ("192.168.0.180",)) and canRestart():
+    if os.system('ping %s -n 1' % ("{LOCAL_IP}",)):
         print("Service not available!")
         lastRestarted = getCurrentTimeInMillis()
+        requests.post('https://maker.ifttt.com/trigger/plex_offline/with/key/{IFTTT_WEBHOOK_KEY}')
     else:
         print("Server available!")
 
@@ -30,14 +37,14 @@ def canRestart():
     print("lastRestarted = " + str(lastRestarted))
     currentTime = getCurrentTimeInMillis()
     print("currentTime = " + str(currentTime))
-    futureTime = int(round(5 * 1000))
+    futureTime = int(round(60 * 5 * 1000))
     print("futureTime = " + str(futureTime))
     if lastRestarted + futureTime > currentTime:
-        print("CAN Restart!")
-        return True
-    else:
         print("CANNOT Restart!")
         return False
+    else:
+        print("CAN Restart!")
+        return True
 
 def getCurrentTimeInMillis():
     """
