@@ -87,7 +87,7 @@ def canRestart():
     """
 
     currentTime = getCurrentTimeInMillis()
-    futureTime = int(round(60 * 5 * 1000))
+    futureTime = int(round(60 * 3 * 1000))
     if lastRestarted + futureTime > currentTime:
         LOG.debug("Cannot restart.")
         LOG.debug("currentTime=" + str(currentTime))
