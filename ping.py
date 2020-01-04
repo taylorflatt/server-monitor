@@ -9,8 +9,11 @@ import requests
 
 LOG = logging.getLogger('')
 
+# Default number of seconds until the next ping attempt.
+DEFAULT_TIMEOUT = 20
+
 # The amount of time we wait until the next attempted status check.
-timeout = 10
+timeout = DEFAULT_TIMEOUT
 
 # The minimum threshold before we will actually attempt to restart the server.
 retries = 3
@@ -52,7 +55,9 @@ def ping():
         LOG.info("Cooldown for restart attempt not elapsed.")
         return
 
+    LOG.debug("Number of attempts = " + str(attempts) + ", previous timeout = " + str(timeout))
     timeout = evaluateNewTimeout()
+    LOG.debug("New timeout = " + str(timeout))
 
     result = subprocess.check_output('powershell.exe tnc ${LOCAL_IP} -port ${LOCAL_PORT}', shell=True)
     if "DestinationHostUnreachable" in str(result):
@@ -82,7 +87,7 @@ def canRestart():
     """
 
     currentTime = getCurrentTimeInMillis()
-    futureTime = int(round(60 * 1 * 1000))
+    futureTime = int(round(60 * 3 * 1000))
     if lastRestarted + futureTime > currentTime:
         LOG.debug("Cannot restart.")
         LOG.debug("currentTime=" + str(currentTime))
@@ -98,9 +103,7 @@ def evaluateNewTimeout():
     Exponential backoff function to determine our timeout timer so we overly saturate the remote host.
     """
 
-    newTimeout = ((2**attempts) - 1) + timeout
-    LOG.debug("Number of attempts = " + str(attempts) + ", previous timeout = " + str(timeout) + " and new timeout = " + str(newTimeout))
-    return newTimeout
+    return DEFAULT_TIMEOUT if attempts == 0 else ((2**attempts) - 1) + timeout
 
 def resetRetries():
     """
